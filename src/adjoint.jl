@@ -1,5 +1,6 @@
 using MacroTools
 using MacroTools: @q, combinedef
+using ChainRulesCore: AbstractZero, Zero, DoesNotExist
 
 named(arg) = isexpr(arg, :(::)) && length(arg.args) == 1 ? :($(gensym())::$(arg.args[1])) : arg
 
@@ -11,6 +12,7 @@ for n = 0:3
   @eval begin
     $gradtuple(x::Tuple) = ($(ntuple(_->:nothing,n)...), x...)
     $gradtuple(x::Nothing) = nothing
+    $gradtuple(x::AbstractZero) = x
     $gradtuple(x) = error("Gradient $x should be a tuple")
   end
 end
