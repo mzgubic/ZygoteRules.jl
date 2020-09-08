@@ -12,7 +12,7 @@ for n = 0:3
   @eval begin
     $gradtuple(x::Tuple) = ($(ntuple(_->:nothing,n)...), x...)
     $gradtuple(x::Nothing) = nothing
-    $gradtuple(x::AbstractZero) = x
+    $gradtuple(x::AbstractZero) = nothing
     $gradtuple(x) = error("Gradient $x should be a tuple")
   end
 end
