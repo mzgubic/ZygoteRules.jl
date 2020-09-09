@@ -12,7 +12,7 @@ for n = 0:3
   @eval begin
     $gradtuple(x::Tuple) = ($(ntuple(_->:nothing,n)...), x...)
     $gradtuple(x::Nothing) = nothing
-    $gradtuple(x::AbstractZero) = nothing
+    $gradtuple(x::AbstractZero) = x
     $gradtuple(x) = error("Gradient $x should be a tuple")
   end
 end
@@ -47,7 +47,7 @@ function gradm(ex, mut = false)
     $adj
     @inline function ZygoteRules._pullback($cx, $f::$T, $(args...)) where $(Ts...)
       y, _back = adjoint(__context__, $f, $(argnames...))
-      $(mut ? nothing : :(back(::Nothing) = nothing))
+      $(mut ? nothing : :(back(::Nothing) = nothing)) # why is this neccessary? isn't this special case defined in gradtuple above?
       back(Δ) = $gradtuple(_back(Δ))
       return y, back
     end
@@ -57,7 +57,7 @@ function gradm(ex, mut = false)
       back(Δ) = $gradtuplekw(_back(Δ))
       return y, back
     end
-    nothing
+    nothing # why is this here?
   end
 end
 
