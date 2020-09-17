@@ -83,11 +83,11 @@ function gradm(ex, mut = false)
       return y, back
     end
     @inline function ZygoteRules._pullback($cx, $f::$T, $(args...)) where $(Ts...)
-        y, back = ZygoteRules._pullback_inner($cx, $f, $(args...))
+        y, back = ZygoteRules._pullback_inner($cx, $f, $(argnames...))
         return y, wrap(back)
     end
     @inline function ZygoteRules._pullback($cx, ::$kT, kw, $f::$T, $(args...)) where $(Ts...)
-        y, back = ZygoteRule._pullback_inner($cx, $kT, kw, $f::$T, $(args...))
+        y, back = ZygoteRules._pullback_inner($cx, $kT, kw, $f::$T, $(argnames...))
         return y, wrap(back)
     end
     nothing # why is this here?
