@@ -68,13 +68,15 @@ function gradm(ex, mut = false)
     @inline function ZygoteRules._pullback($cx, $f::$T, $(args...)) where $(Ts...)
       y, _back = adjoint(__context__, $f, $(argnames...))
       $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
-      back(Δ) = $gradtuple(nothings2zeros(_back(zeros2nothings(Δ))))
+      #back(Δ) = $gradtuple(nothings2zeros(_back(zeros2nothings(Δ))))
+      back(Δ) = $gradtuple(nothings2zeros(_back(Δ)))
       return y, back
     end
     @inline function ZygoteRules._pullback($cx, ::$kT, kw, $f::$T, $(args...)) where $(Ts...)
       y, _back = adjoint(__context__, $f, $(argnames...); kw...)
       $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
-      back(Δ) = $gradtuplekw(nothings2zeros(_back(zeros2nothings(Δ))))
+      #back(Δ) = $gradtuplekw(nothings2zeros(_back(zeros2nothings(Δ))))
+      back(Δ) = $gradtuplekw(nothings2zeros(_back(Δ)))
       return y, back
     end
     nothing # why is this here?
