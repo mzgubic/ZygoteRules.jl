@@ -18,15 +18,8 @@ Wraps the back function in a `nothings2zeros` function, which replaces the `noth
 `Zero()`s.
 """
 function wrap(back)
-    #println("wrap called")
     function wrapped_back(Δ)
-        #println("wrapped_back called")
-        #println(Δ)
-        intermediate = back(Δ)
-        #println(intermediate)
-        output = nothings2zeros(intermediate)
-        #println(output)
-        return output
+        return nothings2zeros(back(Δ))
     end
     return wrapped_back
 end
