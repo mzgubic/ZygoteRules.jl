@@ -14,8 +14,7 @@ Convert input `x` from the internal Zygote format to the ChainRules differential
 """
 nothings2zeros(x) = x
 nothings2zeros(::Nothing) = Zero()
-nothings2zeros(t::Tuple) = map(nothings2zeros, t)
-nothings2zeros(nt::NamedTuple) = map(nothings2zeros, nt)
+nothings2zeros(t::Union{Tuple, NamedTuple}) = map(nothings2zeros, t)
 
 """
     zeros2nothings(x)
@@ -24,8 +23,7 @@ Convert input `x` from the ChainRules differential types to the internal Zygote 
 """
 zeros2nothings(x) = x
 zeros2nothings(::AbstractZero) = nothing
-zeros2nothings(t::Tuple) = map(zeros2nothings, t)
-zeros2nothings(nt::NamedTuple) = map(zeros2nothings, nt)
+zeros2nothings(t::Union{Tuple, NamedTuple}) = map(zeros2nothings, t)
 
 for n = 0:3
   gradtuple = Symbol(:gradtuple, n)
