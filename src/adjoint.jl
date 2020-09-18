@@ -7,22 +7,23 @@ named(arg) = isexpr(arg, :(::)) && length(arg.args) == 1 ? :($(gensym())::$(arg.
 typeless(x) = MacroTools.postwalk(x -> isexpr(x, :(::), :kw) ? x.args[1] : x, x)
 isvararg(x) = isexpr(x, :(::)) && namify(x.args[2]) == :Vararg
 
+"""
+    nothings2zeros(x)
+
+Convert input `x` from the internal Zygote format to the ChainRules differential types.
+"""
 nothings2zeros(x) = x
 nothings2zeros(::Nothing) = Zero()
 nothings2zeros(t::Tuple) = map(nothings2zeros, t)
 
 """
-    wrap(back)
+    zeros2nothings(x)
 
-Wraps the back function in a `nothings2zeros` function, which replaces the `nothing`s with
-`Zero()`s.
+Convert input `x` from the ChainRules differential types to the internal Zygote format.
 """
-function wrap(back)
-    function wrapped_back(Δ)
-        return nothings2zeros(back(Δ))
-    end
-    return wrapped_back
-end
+zeros2nothings(x) = x
+zeros2nothings(::AbstractZero) = nothing
+zeros2nothings(t::Tuple) = map(zeros2nothings, t)
 
 for n = 0:3
   gradtuple = Symbol(:gradtuple, n)
@@ -37,7 +38,6 @@ end
 abstract type AContext end
 function adjoint end
 function _pullback end
-function _pullback_inner end
 function pullback end
 
 function gradm(ex, mut = false)
@@ -63,25 +63,17 @@ function gradm(ex, mut = false)
   adj = @q @inline ZygoteRules.adjoint($(fargs...)) where $(Ts...) = $(esc(body))
   quote
     $adj
-    @inline function ZygoteRules._pullback_inner($cx, $f::$T, $(args...)) where $(Ts...)
+    @inline function ZygoteRules._pullback($cx, $f::$T, $(args...)) where $(Ts...)
       y, _back = adjoint(__context__, $f, $(argnames...))
       $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
-      back(Δ) = $gradtuple(_back(Δ))
+      back(Δ) = $gradtuple(nothings2zeros(_back(zeros2nothings(Δ))))
       return y, back
-    end
-    @inline function ZygoteRules._pullback_inner($cx, ::$kT, kw, $f::$T, $(args...)) where $(Ts...)
-      y, _back = adjoint(__context__, $f, $(argnames...); kw...)
-      $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
-      back(Δ) = $gradtuplekw(_back(Δ))
-      return y, back
-    end
-    @inline function ZygoteRules._pullback($cx, $f::$T, $(args...)) where $(Ts...)
-        y, back = ZygoteRules._pullback_inner($cx, $f, $(argnames...))
-        return y, wrap(back)
     end
     @inline function ZygoteRules._pullback($cx, ::$kT, kw, $f::$T, $(args...)) where $(Ts...)
-        y, back = ZygoteRules._pullback_inner($cx, $kT, $f::$T, $(argnames...); kw...)
-        return y, wrap(back)
+      y, _back = adjoint(__context__, $f, $(argnames...); kw...)
+      $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
+      back(Δ) = $gradtuplekw(nothings2zeros(_back(zeros2nothings(Δ))))
+      return y, back
     end
     nothing # why is this here?
   end
