@@ -24,6 +24,10 @@ Convert input `x` from the ChainRules differential types to the internal Zygote 
 zeros2nothings(x) = x
 zeros2nothings(::AbstractZero) = nothing
 zeros2nothings(t::Union{Tuple, NamedTuple}) = map(zeros2nothings, t)
+zeros2nothings(::Nothing) =
+    @warn "Use of 'nothing' to represent zero gradients is deprecated, " *
+    "use Zero() or DoesNotExist() from ChainRules";
+    nothing
 
 for n = 0:3
   gradtuple = Symbol(:gradtuple, n)
