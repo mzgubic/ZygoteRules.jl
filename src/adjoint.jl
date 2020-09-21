@@ -32,10 +32,9 @@ end
 for n = 0:3
   gradtuple = Symbol(:gradtuple, n)
   @eval begin
+    $gradtuple(x::Composite{Any, T} where T<:Tuple) =  ($(ntuple(_->:(DoesNotExist()),n)...), x...)
     $gradtuple(x::Tuple) = ($(ntuple(_->:(DoesNotExist()),n)...), x...)
     $gradtuple(x::AbstractZero) = x
-    $gradtuple(x::Composite{Any, T} where T<:Union{Tuple, NamedTuple}) = x # see x::Tuple case above. Should this add Zero()s? I don't think so,
-        # it looks like above is catching multiple gradients (wrt a function, kwargs, kwfunc), not a struct
     $gradtuple(x) = error("Gradient $x should be a tuple")
   end
 end
