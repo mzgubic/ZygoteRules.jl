@@ -8,23 +8,23 @@ typeless(x) = MacroTools.postwalk(x -> isexpr(x, :(::), :kw) ? x.args[1] : x, x)
 isvararg(x) = isexpr(x, :(::)) && namify(x.args[2]) == :Vararg
 
 """
-    nothings2zeros(x)
+    generic2diff(x)
 
 Convert input `x` from the internal Zygote format to the ChainRules differential types.
 """
-nothings2zeros(x) = x
-nothings2zeros(::Nothing) = Zero()
-nothings2zeros(t::Union{Tuple, NamedTuple}) = map(nothings2zeros, t)
+generic2diff(x) = x
+generic2diff(::Nothing) = Zero()
+generic2diff(t::Union{Tuple, NamedTuple}) = map(generic2diff, t)
 
 """
-    zeros2nothings(x)
+    diff2generic(x)
 
 Convert input `x` from the ChainRules differential types to the internal Zygote format.
 """
-zeros2nothings(x) = x
-zeros2nothings(::AbstractZero) = nothing
-zeros2nothings(t::Union{Tuple, NamedTuple}) = map(zeros2nothings, t)
-zeros2nothings(::Nothing) =
+diff2generic(x) = x
+diff2generic(::AbstractZero) = nothing
+diff2generic(t::Union{Tuple, NamedTuple}) = map(diff2generic, t)
+diff2generic(::Nothing) =
     @warn "Use of 'nothing' to represent zero gradients is deprecated, " *
     "use Zero() or DoesNotExist() from ChainRules";
     nothing
@@ -70,15 +70,15 @@ function gradm(ex, mut = false)
     @inline function ZygoteRules._pullback($cx, $f::$T, $(args...)) where $(Ts...)
       y, _back = adjoint(__context__, $f, $(argnames...))
       $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
-      #back(Δ) = $gradtuple(nothings2zeros(_back(zeros2nothings(Δ))))
-      back(Δ) = $gradtuple(nothings2zeros(_back(Δ)))
+      #back(Δ) = $gradtuple(generic2diff(_back(diff2generic(Δ))))
+      back(Δ) = $gradtuple(generic2diff(_back(Δ)))
       return y, back
     end
     @inline function ZygoteRules._pullback($cx, ::$kT, kw, $f::$T, $(args...)) where $(Ts...)
       y, _back = adjoint(__context__, $f, $(argnames...); kw...)
       $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
-      #back(Δ) = $gradtuplekw(nothings2zeros(_back(zeros2nothings(Δ))))
-      back(Δ) = $gradtuplekw(nothings2zeros(_back(Δ)))
+      #back(Δ) = $gradtuplekw(generic2diff(_back(diff2generic(Δ))))
+      back(Δ) = $gradtuplekw(generic2diff(_back(Δ)))
       return y, back
     end
     nothing # why is this here?
