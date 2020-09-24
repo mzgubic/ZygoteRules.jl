@@ -34,7 +34,6 @@ for n = 0:3
   @eval begin
     $gradtuple(x::Tuple) = ($(ntuple(_->:(DoesNotExist()),n)...), x...)
     $gradtuple(x::AbstractZero) = x
-    $gradtuple(x::Composite{Any, T} where T<:Tuple) = x
     $gradtuple(x) = error("Gradient $x should be a tuple")
   end
 end
