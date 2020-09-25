@@ -43,6 +43,8 @@ function adjoint end
 function _pullback end
 function pullback end
 
+say(x) = (println("say ", x); return x)
+
 function gradm(ex, mut = false)
   @capture(shortdef(ex), (name_(args__) = body_) |
                          (name_(args__) where {Ts__} = body_)) || error("Need a function definition")
@@ -70,14 +72,14 @@ function gradm(ex, mut = false)
       y, _back = adjoint(__context__, $f, $(argnames...))
       $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
       #back(Δ) = $gradtuple(generic2diff(_back(diff2generic(Δ))))
-      back(Δ) = $gradtuple(generic2diff(_back(Δ)))
+      back(Δ) = $gradtuple(say(generic2diff(say(_back(Δ)))))
       return y, back
     end
     @inline function ZygoteRules._pullback($cx, ::$kT, kw, $f::$T, $(args...)) where $(Ts...)
       y, _back = adjoint(__context__, $f, $(argnames...); kw...)
       $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
       #back(Δ) = $gradtuplekw(generic2diff(_back(diff2generic(Δ))))
-      back(Δ) = $gradtuplekw(generic2diff(_back(Δ)))
+      back(Δ) = $gradtuplekw(say(generic2diff(say(_back(Δ)))))
       return y, back
     end
     nothing # why is this here?
