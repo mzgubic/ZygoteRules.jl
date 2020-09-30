@@ -10,7 +10,7 @@ isvararg(x) = isexpr(x, :(::)) && namify(x.args[2]) == :Vararg
 """
     generic2diff(x)
 
-Convert input `x` from the internal Zygote format to the ChainRules differential types.
+Convert input `x` from the legacy ZygoteRules format to the ChainRules differential types.
 """
 generic2diff(x) = x
 generic2diff(::Nothing) = Zero()
@@ -19,15 +19,15 @@ generic2diff(t::Union{Tuple, NamedTuple}) = map(generic2diff, t)
 """
     diff2generic(x)
 
-Convert input `x` from the ChainRules differential types to the internal Zygote format.
+Convert input `x` from the ChainRules differential types to the legacy ZygoteRules format.
 """
 diff2generic(x) = x
 diff2generic(::AbstractZero) = nothing
 diff2generic(t::Union{Tuple, NamedTuple}) = map(diff2generic, t)
-diff2generic(::Nothing) =
-    @warn "Use of 'nothing' to represent zero gradients is deprecated, " *
-    "use Zero() or DoesNotExist() from ChainRules";
-    nothing
+function diff2generic(::Nothing)
+    @error "Zygote internal use  of 'nothing', rather than `AbstractZero`, detected.  This should never occur. Please open an issue on https://github.com/FluxML/Zygote.jl/issues, including the full text of this message"  stacktrace=stacktrace()
+    return nothing
+end
 
 for n = 0:3
   gradtuple = Symbol(:gradtuple, n)
