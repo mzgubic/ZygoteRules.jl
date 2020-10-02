@@ -7,6 +7,22 @@ named(arg) = isexpr(arg, :(::)) && length(arg.args) == 1 ? :($(gensym())::$(arg.
 typeless(x) = MacroTools.postwalk(x -> isexpr(x, :(::), :kw) ? x.args[1] : x, x)
 isvararg(x) = isexpr(x, :(::)) && namify(x.args[2]) == :Vararg
 
+function difftype_error()
+  # can't use logging macros as that breaks nested AD.
+  println("Zygote internal use  of 'nothing', rather than `AbstractZero`, detected.  This should never occur. Please open an issue on https://github.com/FluxML/Zygote.jl/issues, including the full text of this message. \n Stacktrace:")
+  for (ii, callsite) in enumerate(stacktrace())
+    println("[$ii] $callsite")
+  end
+end
+
+function difftype_error2()
+  # can't use logging macros as that breaks nested AD.
+  println("AbstractZero passed when Nothing expected. Please open an issue on https://github.com/FluxML/Zygote.jl/issues, including the full text of this message. \n Stacktrace:")
+  for (ii, callsite) in enumerate(stacktrace())
+    println("[$ii] $callsite")
+  end
+end
+
 """
     legacy2differential(x)
 
@@ -14,6 +30,7 @@ Convert input `x` from the legacy ZygoteRules format to the ChainRules different
 """
 legacy2differential(x) = x
 legacy2differential(::Nothing) = Zero()
+#legacy2differential(x::AbstractZero) = (difftype_error2(); return x)
 legacy2differential(t::Union{Tuple, NamedTuple}) = map(legacy2differential, t)
 
 """
@@ -24,15 +41,7 @@ Convert input `x` from the ChainRules differential types to the legacy ZygoteRul
 differential2legacy(x) = x
 differential2legacy(::AbstractZero) = nothing
 differential2legacy(t::Union{Tuple, NamedTuple}) = map(differential2legacy, t)
-function differential2legacy(::Nothing)
-    # can't use logging macros as that breaks nested AD.
-    println("Zygote internal use  of 'nothing', rather than `AbstractZero`, detected.  This should never occur. Please open an issue on https://github.com/FluxML/Zygote.jl/issues, including the full text of this message. \n Stacktrace:")
-    for (ii, callsite) in enumerate(stacktrace())
-      ii > 10 && break
-      println("[$ii] $callsite")
-    end
-    return nothing
-end
+differential2legacy(::Nothing) = (difftype_error(); return nothing)
 
 for n = 0:3
   gradtuple = Symbol(:gradtuple, n)
@@ -75,14 +84,12 @@ function gradm(ex, mut = false)
       y, _back = adjoint(__context__, $f, $(argnames...))
       $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
       back(Δ) = $gradtuple(legacy2differential(_back(differential2legacy(Δ))))
-      #back(Δ) = $gradtuple(legacy2differential(_back(Δ)))
       return y, back
     end
     @inline function ZygoteRules._pullback($cx, ::$kT, kw, $f::$T, $(args...)) where $(Ts...)
       y, _back = adjoint(__context__, $f, $(argnames...); kw...)
       $(mut ? nothing : :(back(::Union{Nothing,AbstractZero}) = Zero()))
       back(Δ) = $gradtuplekw(legacy2differential(_back(differential2legacy(Δ))))
-      #back(Δ) = $gradtuplekw(legacy2differential(_back(Δ)))
       return y, back
     end
     return nothing  # make nothing show in terminal after using macro
