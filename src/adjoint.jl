@@ -15,7 +15,7 @@ function legacytype_error()
   end
 end
 
-function difftype_error2()
+function difftype_error()
   # can't use logging macros as that breaks nested AD.
   println("AbstractZero passed when Nothing expected. Please open an issue on https://github.com/FluxML/Zygote.jl/issues, including the full text of this message. \n Stacktrace:")
   for (ii, callsite) in enumerate(stacktrace())
@@ -30,7 +30,7 @@ Convert input `x` from the legacy ZygoteRules format to the ChainRules different
 """
 legacy2differential(x) = x
 legacy2differential(::Nothing) = Zero()
-#legacy2differential(x::AbstractZero) = (difftype_error2(); return x)
+#legacy2differential(x::AbstractZero) = (difftype_error(); return x)
 legacy2differential(t::Union{Tuple, NamedTuple}) = map(legacy2differential, t)
 
 """
