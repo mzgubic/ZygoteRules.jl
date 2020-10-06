@@ -7,19 +7,19 @@ named(arg) = isexpr(arg, :(::)) && length(arg.args) == 1 ? :($(gensym())::$(arg.
 typeless(x) = MacroTools.postwalk(x -> isexpr(x, :(::), :kw) ? x.args[1] : x, x)
 isvararg(x) = isexpr(x, :(::)) && namify(x.args[2]) == :Vararg
 
-function legacytype_error()
+function legacytype_warn()
   # can't use logging macros as that breaks nested AD.
-  println("Zygote internal use  of 'nothing', rather than `AbstractZero`, detected.  This should never occur. Please open an issue on https://github.com/FluxML/Zygote.jl/issues, including the full text of this message. \n Stacktrace:")
+  Core.println("Zygote internal use  of 'nothing', rather than `AbstractZero`, detected.  This should never occur. Please open an issue on https://github.com/FluxML/Zygote.jl/issues, including the full text of this message. \n Stacktrace:")
   for (ii, callsite) in enumerate(stacktrace())
-    println("[$ii] $callsite")
+    Core.println("[$ii] $callsite")
   end
 end
 
 function difftype_error()
   # can't use logging macros as that breaks nested AD.
-  println("AbstractZero passed when Nothing expected. Please open an issue on https://github.com/FluxML/Zygote.jl/issues, including the full text of this message. \n Stacktrace:")
+  Core.println("AbstractZero passed when Nothing expected. Please open an issue on https://github.com/FluxML/Zygote.jl/issues, including the full text of this message. \n Stacktrace:")
   for (ii, callsite) in enumerate(stacktrace())
-    println("[$ii] $callsite")
+    Core.println("[$ii] $callsite")
   end
 end
 
@@ -41,7 +41,7 @@ Convert input `x` from the ChainRules differential types to the legacy ZygoteRul
 differential2legacy(x) = x
 differential2legacy(::AbstractZero) = nothing
 differential2legacy(t::Union{Tuple, NamedTuple}) = map(differential2legacy, t)
-differential2legacy(::Nothing) = (legacytype_error(); return nothing)
+differential2legacy(::Nothing) = (legacytype_warn(); return nothing)
 
 for n = 0:3
   gradtuple = Symbol(:gradtuple, n)
