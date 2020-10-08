@@ -30,7 +30,7 @@ Convert input `x` from the legacy ZygoteRules format to the ChainRules different
 """
 legacy2differential(x) = x
 legacy2differential(::Nothing) = Zero()
-#legacy2differential(x::AbstractZero) = (difftype_error(); return x)
+legacy2differential(x::AbstractZero) = (difftype_error(); return x)
 legacy2differential(t::Union{Tuple, NamedTuple}) = map(legacy2differential, t)
 
 """
