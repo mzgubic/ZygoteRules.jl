@@ -65,17 +65,6 @@ for T_outer in (:Tuple, :NamedTuple)
     convert($T_outer, xp)
   end
 end
-#diff2generic(x::Tuple{Vararg{AbstractZero}}) = Zero() # TODO should this happen?
-diff2generic(t::Union{Tuple, NamedTuple}) = map(diff2generic, t)
-for T_outer in (:Tuple, :NamedTuple)
-  # we create separate methods rather than using a `Union` + an `if` so that we avoid a
-  # branch that changes output type, because nested AD on that kinda thing makes Zygote less
-  # than happy.
-  @eval @inline function diff2generic(x::Composite{P, T}) where {P, T<:$T_outer}
-    xp = map(diff2generic, x)
-    convert($T_outer, xp)
-  end
-end
 
 for n = 0:3
   gradtuple = Symbol(:gradtuple, n)
@@ -91,8 +80,6 @@ abstract type AContext end
 function adjoint end
 function _pullback end
 function pullback end
-
-say(x) = (println("say ", x); return x)
 
 function gradm(ex, mut = false)
   @capture(shortdef(ex), (name_(args__) = body_) |
