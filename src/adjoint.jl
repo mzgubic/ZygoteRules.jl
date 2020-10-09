@@ -34,7 +34,7 @@ w.r.t a tuple and a scalar would be represented as ((gt1, gt2, gt3), gs). The wr
 function `legacy2differential` takes care of the collection, while a gradient w.r.t. to a
 tuple is taken care of by l2d to be represented as a ChainRules.Composite type.
 """
-legacy2differential(x) = error("Gradient $x should be a tuple")
+legacy2differential(x) = x
 legacy2differential(::Nothing) = Zero()
 legacy2differential(x::Union{AbstractZero, Composite}) = (difftype_error(); return x)
 legacy2differential(t::Tuple) = map(l2d, t)
@@ -42,7 +42,7 @@ legacy2differential(t::Tuple) = map(l2d, t)
 l2d(x) = x
 l2d(::Nothing) = Zero()
 function l2d(t::Union{Tuple, NamedTuple})
-  tp = map(g2d, t)
+  tp = map(l2d, t)
   return Composite{Any, typeof(tp)}(tp)
 end
 
@@ -60,8 +60,8 @@ for T_outer in (:Tuple, :NamedTuple)
   # we create separate methods rather than using a `Union` + an `if` so that we avoid a
   # branch that changes output type, because nested AD on that kinda thing makes Zygote less
   # than happy.
-  @eval @inline function diff2generic(x::Composite{P, T}) where {P, T<:$T_outer}
-    xp = map(diff2generic, x)
+  @eval @inline function differential2legacy(x::Composite{P, T}) where {P, T<:$T_outer}
+    xp = map(differential2legacy, x)
     convert($T_outer, xp)
   end
 end
